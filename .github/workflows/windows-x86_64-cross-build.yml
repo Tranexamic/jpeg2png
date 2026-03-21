@@ -1,0 +1,71 @@
+name: Windows x86_64 cross-build
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-windows-x86_64:
+    runs-on: ubuntu-latest
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_DEFAULT_TRIPLET: x64-mingw-static
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install MinGW-w64 cross toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            binutils-mingw-w64-x86-64 \
+            gcc-mingw-w64-x86-64-posix \
+            g++-mingw-w64-x86-64-posix \
+            mingw-w64-tools
+
+      - name: Set up vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.VCPKG_ROOT }}
+            ~/.cache/vcpkg
+          key: ${{ runner.os }}-vcpkg-${{ env.VCPKG_DEFAULT_TRIPLET }}-${{ hashFiles('**/Makefile', '.github/workflows/windows-x86_64-cross-build.yml') }}
+
+      - name: Bootstrap vcpkg
+        run: |
+          if [ ! -d "$VCPKG_ROOT/.git" ]; then
+            git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT"
+          fi
+          "$VCPKG_ROOT"/bootstrap-vcpkg.sh
+
+      - name: Install Windows x86_64 dependencies
+        run: |
+          "$VCPKG_ROOT"/vcpkg install \
+            libjpeg-turbo:${VCPKG_DEFAULT_TRIPLET} \
+            libpng:${VCPKG_DEFAULT_TRIPLET} \
+            zlib:${VCPKG_DEFAULT_TRIPLET}
+
+      - name: Build Windows x86_64 executable with -O3
+        env:
+          VCPKG_INCLUDEDIR: ${{ github.workspace }}/vcpkg/installed/x64-mingw-static/include
+          VCPKG_LIBDIR: ${{ github.workspace }}/vcpkg/installed/x64-mingw-static/lib
+        run: |
+          make clean
+          make \
+            WINDOWS=1 \
+            HOST=x86_64-w64-mingw32- \
+            EXE=.exe \
+            DEBUG=0 \
+            CPPFLAGS="-I${VCPKG_INCLUDEDIR}" \
+            LIBS="-L${VCPKG_LIBDIR} -ljpeg -lpng -lm -lzlib"
+
+      - name: Upload Windows x86_64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jpeg2png-windows-x86_64
+          path: jpeg2png.exe
+          if-no-files-found: error

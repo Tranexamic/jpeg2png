@@ -87,10 +87,10 @@ jpeg2png$(EXE): $(OBJS) $(RES) Makefile
 -include $(OBJS:.o=.d)
 
 gopt/gopt.o: gopt/gopt.c gopt/gopt.h Makefile
-	$(CC) $< -c -o $@ $(CFLAGS) $(NO_WARN_FLAGS)
+	$(CC) $< -c -o $@ $(CPPFLAGS) $(CFLAGS) $(NO_WARN_FLAGS)
 
 %.o: %.c Makefile
-	$(CC) -MP -MMD $< -c -o $@ $(CFLAGS) $(WARN_FLAGS)
+	$(CC) -MP -MMD $< -c -o $@ $(CPPFLAGS) $(CFLAGS) $(WARN_FLAGS)
 
 %.rc.o: %.rc Makefile
 	$(WINDRES) $< $@
