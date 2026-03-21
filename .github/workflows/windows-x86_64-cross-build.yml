@@ -61,7 +61,7 @@ jobs:
             EXE=.exe \
             DEBUG=0 \
             CPPFLAGS="-I${VCPKG_INCLUDEDIR}" \
-            LIBS="-L${VCPKG_LIBDIR} -ljpeg -lpng -lm -lz"
+            LIBS="-L${VCPKG_LIBDIR} -ljpeg -lpng -lm -lzlib"
 
       - name: Upload Windows x86_64 artifact
         uses: actions/upload-artifact@v4
